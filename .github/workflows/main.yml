@@ -37,12 +37,29 @@ jobs:
         git pull
         git checkout generated || git checkout -b generated
 
+    - name: Exclude fork repos (dynamic)
+      run: |
+        FORKS=$(gh api "users/TomNewChao/repos?per_page=100&type=owner" --paginate \
+          --jq '.[] | select(.fork==true) | .name' | paste -sd, -)
+        MANUAL="${{ secrets.EXCLUDE_REPOS }}"
+        if [ -n "$FORKS" ] && [ -n "$MANUAL" ]; then
+          EXCLUDE_ALL="${FORKS},${MANUAL}"
+        elif [ -n "$FORKS" ]; then
+          EXCLUDE_ALL="${FORKS}"
+        else
+          EXCLUDE_ALL="${MANUAL}"
+        fi
+        echo "EXCLUDE_ALL=${EXCLUDE_ALL}" >> $GITHUB_ENV
+        echo "Excluded repos: ${EXCLUDE_ALL}"
+      env:
+        GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
     - name: Generate images
       run: |
         ./zig-out/bin/github-stats
       env:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        EXCLUDE_REPOS: ${{ secrets.EXCLUDE_REPOS }}
+        EXCLUDE_REPOS: ${{ env.EXCLUDE_ALL }}
         EXCLUDE_LANGS: ${{ secrets.EXCLUDE_LANGS }}
         EXCLUDE_PRIVATE: "false"
         SILENT: "true"
