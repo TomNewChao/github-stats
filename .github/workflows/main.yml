@@ -37,38 +37,55 @@ jobs:
         git pull
         git checkout generated || git checkout -b generated
 
-    - name: Exclude fork repos (dynamic)
+    - name: Pass 1 - collect all contributed repositories to JSON
       run: |
-        FORKS=$(gh api "users/TomNewChao/repos?per_page=100&type=owner" --paginate \
-          --jq '.[] | select(.fork==true) | .name' | paste -sd, -)
+        ./zig-out/bin/github-stats --json-output-file stats.json
+      env:
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        EXCLUDE_PRIVATE: "false"
+        SILENT: "true"
+        MAX_RETRIES: 5
+
+    - name: Build exclude list (upstream contributed repos + own forks)
+      run: |
+        OWNER="TomNewChao"
+        # Upstream repos the user contributed to but does not own.
+        # These are the source of the inflated stars/forks/lines of code.
+        UPSTREAM=$(jq -r --arg o "$OWNER" \
+          '[.repositories[] | select(.name | startswith($o + "/") | not) | .name] | join(",")' \
+          stats.json)
+        # The user's own forks - their languages mirror the upstream codebase,
+        # so they would pollute the language breakdown.
+        OWN_FORKS=$(gh api "users/${OWNER}/repos?per_page=100&type=owner" --paginate \
+          --jq '.[] | select(.fork==true) | .full_name' | paste -sd, -)
         MANUAL="${{ secrets.EXCLUDE_REPOS }}"
-        if [ -n "$FORKS" ] && [ -n "$MANUAL" ]; then
-          EXCLUDE_ALL="${FORKS},${MANUAL}"
-        elif [ -n "$FORKS" ]; then
-          EXCLUDE_ALL="${FORKS}"
-        else
-          EXCLUDE_ALL="${MANUAL}"
-        fi
-        echo "EXCLUDE_ALL=${EXCLUDE_ALL}" >> $GITHUB_ENV
-        echo "Excluded repos: ${EXCLUDE_ALL}"
+        MERGED=""
+        for part in "$UPSTREAM" "$OWN_FORKS" "$MANUAL"; do
+          if [ -n "$part" ]; then
+            if [ -n "$MERGED" ]; then MERGED="$MERGED,$part"; else MERGED="$part"; fi
+          fi
+        done
+        echo "EXCLUDE_ALL=$MERGED" >> "$GITHUB_ENV"
+        echo "::group::Excluded repos"
+        echo "$MERGED" | tr ',' '\n'
+        echo "::endgroup::"
       env:
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
-    - name: Generate images
+    - name: Pass 2 - regenerate images from JSON with exclusions (no API calls)
       run: |
-        ./zig-out/bin/github-stats
+        ./zig-out/bin/github-stats --json-input-file stats.json
       env:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         EXCLUDE_REPOS: ${{ env.EXCLUDE_ALL }}
         EXCLUDE_LANGS: ${{ secrets.EXCLUDE_LANGS }}
         EXCLUDE_PRIVATE: "false"
         SILENT: "true"
-        # TODO: Remove this when they get their API working again
-        # https://github.com/orgs/community/discussions/192970
         MAX_RETRIES: 5
 
     - name: Commit to the repo
       run: |
+        rm -f stats.json
         git add .
         # Force the build to succeed, even if no files were changed
         git commit -m 'Update generated files' || true
