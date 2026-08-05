@@ -68,13 +68,29 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
+    # Merge step also exports EXCLUDE_HIGHSTAR (repos with stars > threshold,
+    # e.g. ceph/ceph, which would dominate the language chart with their whole
+    # codebase). Combine both lists here for Pass 2.
+    - name: Combine exclusion lists (forks + high-star)
+      run: |
+        PARTS=""
+        for v in "$EXCLUDE_FORKS" "$EXCLUDE_HIGHSTAR"; do
+          if [ -n "$v" ]; then
+            if [ -n "$PARTS" ]; then PARTS="$PARTS,$v"; else PARTS="$v"; fi
+          fi
+        done
+        echo "EXCLUDE_ALL=$PARTS" >> "$GITHUB_ENV"
+        echo "::group::Excluded repos"
+        echo "$PARTS" | tr ',' '\n'
+        echo "::endgroup::"
+
     # Pass 2: regenerate SVGs from the merged JSON (zero new API calls).
     - name: Pass 2 - regenerate images from merged JSON
       run: |
         ./zig-out/bin/github-stats --json-input-file stats.json
       env:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        EXCLUDE_REPOS: ${{ env.EXCLUDE_FORKS }}
+        EXCLUDE_REPOS: ${{ env.EXCLUDE_ALL }}
         EXCLUDE_LANGS: ${{ secrets.EXCLUDE_LANGS }}
         EXCLUDE_PRIVATE: "false"
         SILENT: "true"

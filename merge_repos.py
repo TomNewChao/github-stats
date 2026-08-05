@@ -146,6 +146,23 @@ def main():
         json.dump(stats, f, indent=2)
     print(f"done: merged {added}, total repos now {len(stats['repositories'])}")
 
+    # Exclude high-star upstream repos: jstrieb counts each repo's OVERALL
+    # languages/stars, not just the user's commits. So a popular upstream
+    # (e.g. ceph/ceph, 16k stars, C++) would dominate the language chart and
+    # inflate stars even if the user only touched a few files. Drop any repo
+    # whose star count exceeds the threshold (the user's own/org repos are 0★).
+    threshold = int(os.environ.get("STARS_THRESHOLD", "1000"))
+    highstar = [
+        r["name"] for r in stats["repositories"]
+        if int(r.get("stars", 0)) > threshold
+    ]
+    highstar_str = ",".join(highstar)
+    print(f"high-star repos (>{threshold}★) to exclude: {highstar_str or 'none'}")
+    github_env = os.environ.get("GITHUB_ENV")
+    if github_env:
+        with open(github_env, "a") as gf:
+            gf.write(f"EXCLUDE_HIGHSTAR={highstar_str}\n")
+
 
 if __name__ == "__main__":
     main()
