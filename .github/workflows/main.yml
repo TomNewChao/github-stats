@@ -96,6 +96,12 @@ jobs:
         SILENT: "true"
         MAX_RETRIES: 5
 
+    - name: Upload stats JSON as artifact
+      uses: actions/upload-artifact@v5
+      with:
+        name: github-stats-json
+        path: stats.json
+
     - name: Commit to the repo
       run: |
         rm -f stats.json
