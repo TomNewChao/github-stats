@@ -2,7 +2,7 @@ name: Generate Stats Images
 
 on:
   push:
-    branches: 
+    branches:
       - master
   schedule:
     - cron: "5 0 * * *"
@@ -26,18 +26,20 @@ jobs:
         version: 0.16.0
 
     - name: Build
-      run: |
-        zig build
+      run: zig build
 
     - name: Checkout history branch
       run: |
         git config --global user.name "jstrieb/github-stats"
         git config --global user.email "github-stats[bot]@jstrieb.github.io"
-        # Push generated files to the generated branch
         git pull
         git checkout generated || git checkout -b generated
 
-    - name: Pass 1 - collect all contributed repositories to JSON
+    # Pass 1: jstrieb's native discovery via the contribution graph (green squares).
+    # This MISSES repos whose commits were merged via PR squash-merge
+    # (committer = GitHub), e.g. openIndu/openindu-station. The merge step
+    # below tops those up from repositoriesContributedTo.
+    - name: Pass 1 - jstrieb collect via contribution graph
       run: |
         ./zig-out/bin/github-stats --json-output-file stats.json
       env:
@@ -46,38 +48,33 @@ jobs:
         SILENT: "true"
         MAX_RETRIES: 5
 
-    - name: Build exclude list (upstream contributed repos + own forks)
+    # Merge: top up repos the contribution graph skipped (openindu-station, etc.).
+    # merge_repos.py lives on master; read it from there at runtime.
+    - name: Merge repos missed by the contribution graph
       run: |
-        OWNER="TomNewChao"
-        # Upstream repos the user contributed to but does not own.
-        # These are the source of the inflated stars/forks/lines of code.
-        UPSTREAM=$(jq -r --arg o "$OWNER" \
-          '[.repositories[] | select(.name | startswith($o + "/") | not) | .name] | join(",")' \
-          stats.json)
-        # The user's own forks - their languages mirror the upstream codebase,
-        # so they would pollute the language breakdown.
-        OWN_FORKS=$(gh api "users/${OWNER}/repos?per_page=100&type=owner" --paginate \
-          --jq '.[] | select(.fork==true) | .full_name' | paste -sd, -)
-        MANUAL="${{ secrets.EXCLUDE_REPOS }}"
-        MERGED=""
-        for part in "$UPSTREAM" "$OWN_FORKS" "$MANUAL"; do
-          if [ -n "$part" ]; then
-            if [ -n "$MERGED" ]; then MERGED="$MERGED,$part"; else MERGED="$part"; fi
-          fi
-        done
-        echo "EXCLUDE_ALL=$MERGED" >> "$GITHUB_ENV"
-        echo "::group::Excluded repos"
-        echo "$MERGED" | tr ',' '\n'
-        echo "::endgroup::"
+        git show master:merge_repos.py > /tmp/merge_repos.py
+        python3 /tmp/merge_repos.py
+      env:
+        GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        OWNER: TomNewChao
+        STATS_FILE: stats.json
+
+    # Own forks (full names) to exclude from the final aggregation, per preference.
+    - name: Build own-fork exclusion list
+      run: |
+        FORKS=$(gh api "users/TomNewChao/repos?per_page=100&type=owner" --paginate \
+          --jq '.[] | select(.fork==true) | .full_name' 2>/dev/null | paste -sd, - || true)
+        echo "EXCLUDE_FORKS=$FORKS" >> "$GITHUB_ENV"
       env:
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
-    - name: Pass 2 - regenerate images from JSON with exclusions (no API calls)
+    # Pass 2: regenerate SVGs from the merged JSON (zero new API calls).
+    - name: Pass 2 - regenerate images from merged JSON
       run: |
         ./zig-out/bin/github-stats --json-input-file stats.json
       env:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        EXCLUDE_REPOS: ${{ env.EXCLUDE_ALL }}
+        EXCLUDE_REPOS: ${{ env.EXCLUDE_FORKS }}
         EXCLUDE_LANGS: ${{ secrets.EXCLUDE_LANGS }}
         EXCLUDE_PRIVATE: "false"
         SILENT: "true"
@@ -86,7 +83,6 @@ jobs:
     - name: Commit to the repo
       run: |
         rm -f stats.json
-        git add .
-        # Force the build to succeed, even if no files were changed
+        git add overview.svg languages.svg
         git commit -m 'Update generated files' || true
         git push --set-upstream origin generated
