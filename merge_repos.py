@@ -11,6 +11,7 @@ This script queries `repositoriesContributedTo` (which DOES list those repos) an
 appends any repo that is missing from stats.json (produced by jstrieb's pass 1),
 so jstrieb's `--json-input-file` pass picks them up. Own forks are excluded.
 """
+import hashlib
 import json
 import os
 import subprocess
@@ -19,6 +20,13 @@ import time
 
 OWNER = os.environ.get("OWNER", "TomNewChao")
 STATS_FILE = os.environ.get("STATS_FILE", "stats.json")
+
+
+def label(name, private):
+    """Repo name that is safe to print: this runs in a public repo's CI log."""
+    if private:
+        return "<private:" + hashlib.sha1(name.encode()).hexdigest()[:6] + ">"
+    return name
 
 
 def gh_rest(path):
@@ -111,7 +119,7 @@ def main():
     ]
     print(f"missing (will merge): {len(missing)}")
     for n in missing:
-        print(f"  - {n['nameWithOwner']}")
+        print(f"  - {label(n['nameWithOwner'], n['isPrivate'])}")
 
     added = 0
     for n in missing:
@@ -138,7 +146,7 @@ def main():
         })
         added += 1
         print(
-            f"merged {fn}: stars={n['stargazerCount']} "
+            f"merged {label(fn, n['isPrivate'])}: stars={n['stargazerCount']} "
             f"langs={len(langs)} lines={lc} views={views}"
         )
 
@@ -146,22 +154,9 @@ def main():
         json.dump(stats, f, indent=2)
     print(f"done: merged {added}, total repos now {len(stats['repositories'])}")
 
-    # Exclude high-star upstream repos: jstrieb counts each repo's OVERALL
-    # languages/stars, not just the user's commits. So a popular upstream
-    # (e.g. ceph/ceph, 16k stars, C++) would dominate the language chart and
-    # inflate stars even if the user only touched a few files. Drop any repo
-    # whose star count exceeds the threshold (the user's own/org repos are 0★).
-    threshold = int(os.environ.get("STARS_THRESHOLD", "1000"))
-    highstar = [
-        r["name"] for r in stats["repositories"]
-        if int(r.get("stars", 0)) > threshold
-    ]
-    highstar_str = ",".join(highstar)
-    print(f"high-star repos (>{threshold}★) to exclude: {highstar_str or 'none'}")
-    github_env = os.environ.get("GITHUB_ENV")
-    if github_env:
-        with open(github_env, "a") as gf:
-            gf.write(f"EXCLUDE_HIGHSTAR={highstar_str}\n")
+    # Upstream projects (apache/plc4x, ceph/ceph, ...) are no longer dropped here:
+    # recent_stats.py replaces every repo's languages/lines with this user's own
+    # changes and zeroes the stars/forks/views of repos above its star threshold.
 
 
 if __name__ == "__main__":
