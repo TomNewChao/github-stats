@@ -176,6 +176,48 @@ and retrieve the images.
 1. Star this repo if you like it!
 
 
+## Personal code contribution cards
+
+Upstream's language card sums the language sizes of every repository you
+contributed to, so a large project you barely touched can dominate it, and the
+"lines of code changed" figure covers all time. This fork's workflow rewrites
+both before rendering (`recent_stats.py`): the language card and the
+"Lines of code changed (12 months)" row describe only the code you changed
+yourself during the rolling past 365 days. Every other row is computed as
+upstream computes it.
+
+What counts, per file of each commit:
+
+- Only commits on the default branch that GitHub attributes to your account.
+  Merge commits and root commits are skipped because they can contain other
+  people's code. Within a co-authored single-parent commit, authorship cannot
+  be split any further.
+- Lines added plus lines deleted, like upstream's "lines changed".
+- Not counted: whole-file deletions, generated code (`generated/`, `build/`,
+  `dist/`, `obj/`, `*.g.cs`, `*.min.js`, protobuf output, files whose first
+  lines say "auto-generated" or "do not edit"), vendored or versioned
+  third-party source trees (`vendor/`, `node_modules/`, `django-allauth-65.4.1/`),
+  documentation, data and configuration files, and unrecognised file types.
+  The run log lists the largest ignored categories.
+- The language percentages are shares of those changed lines, not shares of
+  whole repositories.
+
+Repositories you forked are left out (their default branch mirrors the
+upstream, where the commits are counted once). Upstream projects with more
+than 1000 stars (for example `apache/plc4x`) are included for your own
+changes only; their stars, forks, and views are set to 0 so they are not
+counted as yours.
+
+The workflow fails instead of publishing a partial card if an API call keeps
+failing or GitHub truncates a commit's file list; the `generated` branch then
+keeps the previous cards. Private repository names are replaced by a short
+hash in all output, and no `stats.json` artifact is uploaded, because this
+repository and its logs are public. To review per-repository numbers, run
+`recent_stats.py --audit-file audit.json` locally with a token; that file
+contains private repository names and must not be published.
+
+Run the tests with `python3 -m unittest discover -s tests`.
+
 ## Analyzing the Data
 
 Using the `github-stats` CLI (available on the
