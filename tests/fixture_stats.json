@@ -1,0 +1,33 @@
+{
+  "repositories": [
+    {
+      "name": "TomNewChao/example",
+      "stars": 1,
+      "forks": 0,
+      "languages": [
+        {"name": "Python", "size": 6000, "color": "#3572A5"},
+        {"name": "C#", "size": 4000, "color": "#178600"}
+      ],
+      "lines_changed": 10000,
+      "views": 0,
+      "private": false
+    },
+    {
+      "name": "apache/plc4x",
+      "stars": 0,
+      "forks": 0,
+      "languages": [],
+      "lines_changed": 0,
+      "views": 0,
+      "private": false
+    }
+  ],
+  "user": "TomNewChao",
+  "name": "TomNewChao",
+  "emails": [],
+  "repo_contributions": 1,
+  "issue_contributions": 0,
+  "commit_contributions": 5,
+  "pr_contributions": 0,
+  "review_contributions": 0
+}
