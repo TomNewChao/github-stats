@@ -36,9 +36,9 @@ jobs:
         ./zig-out/bin/github-stats --json-input-file tests/fixture_stats.json \
           --overview-output-file /tmp/overview.svg \
           --languages-output-file /tmp/languages.svg
-        grep -q 'Lines of code changed (12 months)' /tmp/overview.svg
+        grep -q 'Lines of code changed (36 months)' /tmp/overview.svg
         grep -q '10,000' /tmp/overview.svg
-        grep -q 'Languages (My Code, Past 12 Months)' /tmp/languages.svg
+        grep -q 'Languages (My Code, Past 36 Months)' /tmp/languages.svg
         grep -q '<span class="lang">Python</span>' /tmp/languages.svg
         grep -q '60.00%' /tmp/languages.svg
         if grep -q '<span class="lang">Go</span>' /tmp/languages.svg; then
@@ -106,14 +106,16 @@ jobs:
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
     # Replace every repository's whole-repo language sizes and all-time line count
-    # with this user's own code changes over the last 365 days. Upstream projects
-    # (more than 1000 stars) keep their place but lose their stars/forks/views.
-    # recent_stats.py lives on master, like merge_repos.py. It never prints
-    # private repository names: this repository, and its logs, are public.
+    # with this user's own code changes over the last 1095 days (36 months). The
+    # card labels in src/templates must say the same; a unit test checks that.
+    # Upstream projects (more than 1000 stars) keep their place but lose their
+    # stars/forks/views. recent_stats.py lives on master, like merge_repos.py. It
+    # never prints private repository names: this repository, and its logs, are
+    # public.
     - name: Collect recent personal code changes
       run: |
         git show master:recent_stats.py > /tmp/recent_stats.py
-        python3 /tmp/recent_stats.py --input stats.json --output recent-stats.json --days 365
+        python3 /tmp/recent_stats.py --input stats.json --output recent-stats.json --days 1095
       env:
         GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         EXCLUDE_REPOS: ${{ env.EXCLUDE_FORKS }}

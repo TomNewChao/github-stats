@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import io
 import json
 import os
+import re
 import tempfile
 import unittest
 from unittest import mock
@@ -135,11 +136,17 @@ class CollectionTests(unittest.TestCase):
         self.assertEqual(result["languages"], {"Go": 3, "Python": 5})
         self.assertEqual(result["commits"], 2)
 
-    def test_a_possibly_truncated_file_list_is_an_error(self):
-        files = [changed(f"f{i}.py", 1) for i in range(3000)]
+    def test_a_commit_with_a_cut_off_file_list_is_skipped_as_a_bulk_commit(self):
+        files = [changed(f"f{i}.py", 1, 1) for i in range(3000)]
         client = FakeClient(details={("o/r", "big"): [files]})
-        with self.assertRaises(GitHubError):
-            commit_changes(client, "o/r", "big")
+        changes, ignored, counted = commit_changes(client, "o/r", "big")
+        self.assertEqual((dict(changes), dict(ignored), counted), ({}, {"bulk-commit": 6000}, []))
+
+    def test_a_commit_just_below_the_cap_is_still_measured(self):
+        files = [changed(f"f{i}.py", 1) for i in range(2999)]
+        client = FakeClient(details={("o/r", "big"): [files]})
+        changes, ignored, _ = commit_changes(client, "o/r", "big")
+        self.assertEqual((dict(changes), dict(ignored)), ({"Python": 2999}, {}))
 
 
 class TransformTests(unittest.TestCase):
@@ -332,6 +339,35 @@ class CommandLineTests(unittest.TestCase):
     def test_a_non_positive_window_is_rejected(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             recent_stats.main(["--days", "0"])
+
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def read(*parts):
+    with open(os.path.join(ROOT, *parts), encoding="utf-8") as handle:
+        return handle.read()
+
+
+class WindowConsistencyTests(unittest.TestCase):
+    """The window is written in several places; a card must never claim another one."""
+
+    def test_labels_defaults_and_docs_match_the_window_the_workflow_uses(self):
+        workflow = read(".github", "workflows", "main.yml")
+        windows = set(re.findall(r"recent_stats\.py[^\n]*--days (\d+)", workflow))
+        self.assertEqual(len(windows), 1, windows)
+        days = int(windows.pop())
+        months = round(days / 30.4375)
+        overview = f"Lines of code changed ({months} months)"
+        languages = f"Languages (My Code, Past {months} Months)"
+        self.assertEqual(recent_stats.DEFAULT_DAYS, days)
+        self.assertIn(overview, read("src", "templates", "overview.svg"))
+        self.assertIn(languages, read("src", "templates", "languages.svg"))
+        self.assertIn(f"grep -q '{overview}'", workflow)
+        self.assertIn(f"grep -q '{languages}'", workflow)
+        readme = " ".join(read("README.md").split())
+        self.assertIn(f'"{overview}" row', readme)
+        self.assertIn(f"past {days} days ({months} months)", readme)
 
 
 if __name__ == "__main__":
