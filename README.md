@@ -182,9 +182,9 @@ Upstream's language card sums the language sizes of every repository you
 contributed to, so a large project you barely touched can dominate it, and the
 "lines of code changed" figure covers all time. This fork's workflow rewrites
 both before rendering (`recent_stats.py`): the language card and the
-"Lines of code changed (12 months)" row describe only the code you changed
-yourself during the rolling past 365 days. Every other row is computed as
-upstream computes it.
+"Lines of code changed (36 months)" row describe only the code you changed
+yourself during the rolling past 1095 days (36 months). Every other row is
+computed as upstream computes it.
 
 What counts, per file of each commit:
 
@@ -198,7 +198,10 @@ What counts, per file of each commit:
   lines say "auto-generated" or "do not edit"), vendored or versioned
   third-party source trees (`vendor/`, `node_modules/`, `django-allauth-65.4.1/`),
   documentation, data and configuration files, and unrecognised file types.
-  The run log lists the largest ignored categories.
+  A commit that touches 3000 or more files is skipped as a whole: GitHub
+  lists no more than 3000 files, so it cannot be measured, and it is a bulk
+  import, rename or removal rather than code written by hand. The run log
+  lists the largest ignored categories.
 - The language percentages are shares of those changed lines, not shares of
   whole repositories.
 
@@ -209,12 +212,16 @@ changes only; their stars, forks, and views are set to 0 so they are not
 counted as yours.
 
 The workflow fails instead of publishing a partial card if an API call keeps
-failing or GitHub truncates a commit's file list; the `generated` branch then
-keeps the previous cards. Private repository names are replaced by a short
-hash in all output, and no `stats.json` artifact is uploaded, because this
-repository and its logs are public. To review per-repository numbers, run
+failing; the `generated` branch then keeps the previous cards. Private
+repository names are replaced by a short hash in all output, and no
+`stats.json` artifact is uploaded, because this repository and its logs are
+public. To review per-repository numbers, run
 `recent_stats.py --audit-file audit.json` locally with a token; that file
 contains private repository names and must not be published.
+
+Known limit: a vendored copy of somebody else's library under an unremarkable
+path (for example a `utils/` folder) cannot be told apart from your own code
+and is counted.
 
 Run the tests with `python3 -m unittest discover -s tests`.
 

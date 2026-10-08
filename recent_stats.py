@@ -40,6 +40,10 @@ from urllib.request import Request, urlopen
 
 
 API = "https://api.github.com"
+# 36 months. The workflow, the card labels in src/templates and the README must
+# say the same; tests/test_recent_stats.py checks it.
+DEFAULT_DAYS = 1095
+MAX_LISTED_FILES = 3000  # GitHub's cap on the files it lists for one commit
 MAX_ATTEMPTS = 5
 MAX_WAIT_SECONDS = 20 * 60
 NEXT_LINK = re.compile(r'<([^>]+)>;\s*rel="next"')
@@ -258,8 +262,12 @@ def commit_changes(client, repo_name, sha):
     """Return ({language: lines}, Counter of ignored lines by reason, [(lines, file)])."""
     files = [file for page in client.pages(f"/repos/{repo_name}/commits/{sha}")
              for file in page.get("files", [])]
-    if len(files) >= 3000:  # The API stops listing files at 3000.
-        raise GitHubError("a commit lists 3000 files; the list may be truncated")
+    if len(files) >= MAX_LISTED_FILES:
+        # The API lists at most 3000 files, so this list is cut off and the
+        # commit cannot be measured. A commit this big is a bulk import,
+        # rename or removal rather than code written by hand: skip it.
+        lines = sum(file["additions"] + file["deletions"] for file in files)
+        return {}, Counter({"bulk-commit": lines}), []
     changes, ignored, counted = defaultdict(int), Counter(), []
     for file in files:
         # Per-file numbers are the source of truth: the commit-level total
@@ -352,7 +360,7 @@ def main(argv=None):
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--input", default="stats.json")
     parser.add_argument("--output", default="recent-stats.json")
-    parser.add_argument("--days", type=int, default=365)
+    parser.add_argument("--days", type=int, default=DEFAULT_DAYS)
     parser.add_argument("--exclude", default=os.environ.get("EXCLUDE_REPOS", ""),
                         help="comma or space separated repository names or globs "
                              "(default: $EXCLUDE_REPOS)")
