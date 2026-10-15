@@ -134,43 +134,43 @@ div.ellipsis {
 <span class="progress">
 <span style="
   background-color: #3572A5; 
-  width: 41.745%;
+  width: 41.237%;
 " class="progress-item"></span><span style="
   background-color: #178600; 
-  width: 34.198%;
+  width: 35.098%;
 " class="progress-item"></span><span style="
   background-color: #3178c6; 
-  width: 17.599%;
+  width: 17.310%;
 " class="progress-item"></span><span style="
   background-color: #f1e05a; 
-  width: 1.968%;
+  width: 1.935%;
 " class="progress-item"></span><span style="
   background-color: #00ADD8; 
-  width: 1.302%;
+  width: 1.280%;
 " class="progress-item"></span><span style="
   background-color: #b07219; 
-  width: 0.821%;
+  width: 0.807%;
 " class="progress-item"></span><span style="
   background-color: #89e051; 
-  width: 0.683%;
+  width: 0.672%;
 " class="progress-item"></span><span style="
   background-color: #dea584; 
-  width: 0.409%;
+  width: 0.402%;
 " class="progress-item"></span><span style="
   background-color: #e38c00; 
-  width: 0.354%;
+  width: 0.348%;
 " class="progress-item"></span><span style="
   background-color: #384d54; 
-  width: 0.345%;
+  width: 0.343%;
 " class="progress-item"></span><span style="
   background-color: #663399; 
-  width: 0.267%;
+  width: 0.263%;
 " class="progress-item"></span><span style="
   background-color: #41b883; 
-  width: 0.180%;
+  width: 0.177%;
 " class="progress-item"></span><span style="
   background-color: #e34c26; 
-  width: 0.103%;
+  width: 0.101%;
 " class="progress-item"></span><span style="
   background-color: #C1F12E; 
   width: 0.025%;
@@ -200,7 +200,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">Python</span>
-  <span class="percent">41.74%</span>
+  <span class="percent">41.24%</span>
 </li>
 <li style="animation-delay: 300ms;">
   <svg 
@@ -216,7 +216,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">C#</span>
-  <span class="percent">34.20%</span>
+  <span class="percent">35.10%</span>
 </li>
 <li style="animation-delay: 450ms;">
   <svg 
@@ -232,7 +232,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">TypeScript</span>
-  <span class="percent">17.60%</span>
+  <span class="percent">17.31%</span>
 </li>
 <li style="animation-delay: 600ms;">
   <svg 
@@ -248,7 +248,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">JavaScript</span>
-  <span class="percent">1.97%</span>
+  <span class="percent">1.94%</span>
 </li>
 <li style="animation-delay: 750ms;">
   <svg 
@@ -264,7 +264,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">Go</span>
-  <span class="percent">1.30%</span>
+  <span class="percent">1.28%</span>
 </li>
 <li style="animation-delay: 900ms;">
   <svg 
@@ -280,7 +280,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">Java</span>
-  <span class="percent">0.82%</span>
+  <span class="percent">0.81%</span>
 </li>
 <li style="animation-delay: 1050ms;">
   <svg 
@@ -296,7 +296,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">Shell</span>
-  <span class="percent">0.68%</span>
+  <span class="percent">0.67%</span>
 </li>
 <li style="animation-delay: 1200ms;">
   <svg 
@@ -312,7 +312,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">Rust</span>
-  <span class="percent">0.41%</span>
+  <span class="percent">0.40%</span>
 </li>
 <li style="animation-delay: 1350ms;">
   <svg 
@@ -344,7 +344,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">Dockerfile</span>
-  <span class="percent">0.35%</span>
+  <span class="percent">0.34%</span>
 </li>
 <li style="animation-delay: 1650ms;">
   <svg 
@@ -360,7 +360,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">CSS</span>
-  <span class="percent">0.27%</span>
+  <span class="percent">0.26%</span>
 </li>
 <li style="animation-delay: 1800ms;">
   <svg 
@@ -408,7 +408,7 @@ div.ellipsis {
       d="M8 4a4 4 0 100 8 4 4 0 000-8z"
   ></path></svg>
   <span class="lang">Batchfile</span>
-  <span class="percent">0.03%</span>
+  <span class="percent">0.02%</span>
 </li>
 <li style="animation-delay: 2250ms;">
   <svg 
